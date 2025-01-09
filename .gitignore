@@ -1,0 +1,5 @@
+Project Backups
+proteus/Project Backups
+*.pdsprj.*
+*.lst
+*.hex
