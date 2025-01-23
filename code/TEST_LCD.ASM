@@ -5,12 +5,12 @@
                 LCD_RW EQU P1.5
                 LCD_E EQU P1.6
 
-                LCD_D_REG_H EQU 0F5H
-                LCD_D_REG_L EQU 0FFH
+                LCD_DELAY_L0_LOC EQU 0F5H
+                ;LCD_DELAY_L1_LOC EQU 0FFH
 
                 ; LCD DELAY
-                LCD_DELAY_H    EQU 60H
-                LCD_DELAY_L    EQU 61H
+                LCD_DELAY_L0_COUNT    EQU 22H
+                ;LCD_DELAY_L1_COUNT    EQU 10H
 
                 MOV SP, #70H
                 MOV PSW, #00H
@@ -37,7 +37,7 @@ MAIN:           ; MAIN CODE START
 
 
 ; ============== SUBROUTINE / FUNCTIONS ===============
-
+; FOR LCD
 LCD_STR_PRINT:  ;MOV DPTR, #LCD_STR
     LSP_AGAIN:
                 CLR A ;set A=0 (match found)
@@ -49,14 +49,16 @@ LCD_STR_PRINT:  ;MOV DPTR, #LCD_STR
     LSP_END:    RET
 
 
-LCD_DELAY:      PUSH LCD_D_REG_H
-                PUSH LCD_D_REG_L
-                MOV LCD_D_REG_H, #LCD_DELAY_H
-    LCD_D_A_1:  MOV LCD_D_REG_L, #LCD_DELAY_L
-    LCD_D_A_2:  DJNZ LCD_D_REG_L, LCD_D_A_2
-                DJNZ LCD_D_REG_H, LCD_D_A_1
-                POP LCD_D_REG_L
-                POP LCD_D_REG_H
+LCD_DELAY:      ;PUSH LCD_DELAY_L0_LOC
+                ;PUSH LCD_DELAY_L1_LOC
+                MOV LCD_DELAY_L0_LOC, #LCD_DELAY_L0_COUNT
+    LCD_DELAY_L0:  
+    ;             MOV LCD_DELAY_L1_LOC, #LCD_DELAY_L1_COUNT
+    ; LCD_DELAY_L1:  
+    ;             DJNZ LCD_DELAY_L1_LOC, LCD_DELAY_L1
+                DJNZ LCD_DELAY_L0_LOC, LCD_DELAY_L0
+                ;POP LCD_DELAY_L1_LOC
+                ;POP LCD_DELAY_L0_LOC
                 
                 RET
 
@@ -77,7 +79,17 @@ LCD_WRITE_DATA: LCALL LCD_READY     ;write data to LCD
                 CLR LCD_RW              ;R/W=0 for write
                 SETB LCD_E              ;LCD_E=1 for high pulse
                 LCALL LCD_DELAY     ;give LCD some time
-;                 LCALL REG_DELAY     ;give LCD some time
+                CLR LCD_E               ;LCD_E=0 for H-to-L pulse
+                LCALL LCD_DELAY     ;give LCD some time
+                RET
+
+LCD_WRITE_NUM:  LCALL LCD_READY     ;write data to LCD
+                ADD A, #30H         ; CONVERT ASCII NUM
+                MOV LCD_P, A        ;copy reg A to port1
+                SETB LCD_RS             ;LCD_RS=1 for data
+                CLR LCD_RW              ;R/W=0 for write
+                SETB LCD_E              ;LCD_E=1 for high pulse
+                LCALL LCD_DELAY     ;give LCD some time
                 CLR LCD_E               ;LCD_E=0 for H-to-L pulse
                 LCALL LCD_DELAY     ;give LCD some time
                 RET
@@ -94,7 +106,7 @@ LCD_READY:      SETB LCD_P.7
 
 LCD_INIT:       MOV A, #38H         ;init. LCD 2 lines, 5x7 matrix
                 ACALL LCD_CMD
-                LCALL LCD_COFF         ;dispplay on, cursor on
+                LCALL LCD_COFF      ;dispplay on, cursor on
                 LCALL LCD_CMD
                 RET
 

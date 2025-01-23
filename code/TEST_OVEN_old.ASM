@@ -41,7 +41,6 @@
                 CLR M_7SEG_DISP_DIGITS_2_PORT
                 ; CLR M_7SEG_DISP_DIGITS_3_PORT
 
-
                 ; COUNTER SETUP
                 COUNTER_ADDR_IN_0       EQU 60H
                 COUNTER_ADDR_IN_1       EQU 61H
@@ -56,8 +55,8 @@
                 OVEN_START_PIN      EQU P1.3
                 OVEN_PAUSE_PIN      EQU P1.7
 
-                SETB OVEN_START_PIN     ; START INPUT (1)
-                SETB OVEN_PAUSE_PIN     ; PAUSE INPUT (1)
+                SETB OVEN_START_PIN
+                SETB OVEN_PAUSE_PIN
 
 
                 MOV SP, #70H
@@ -67,15 +66,15 @@
 
 ; ============== MAIN CODE START =====================
 MAIN:           ; MAIN CODE START
-                LCALL LCD_INIT
-                LCALL LCD_CSR
-                LCALL LCD_CI
-
-                ; LCD STRING DISPLAY
-                MOV DPTR, #LCD_STR
-                LCALL LCD_STR_PRINT
-
-                LCALL LCD_CL2
+;                LCALL LCD_INIT
+;                LCALL LCD_CSR
+;                LCALL LCD_CI
+;
+;                ; LCD STRING DISPLAY
+;                MOV DPTR, #LCD_STR
+;                LCALL LCD_STR_PRINT
+;
+;                LCALL LCD_CL2
 
                 CLR KEY_SINGLE_PRESS
 
@@ -97,54 +96,54 @@ MAIN:           ; MAIN CODE START
 
     ;             DJNZ COUNTER_DIGIT_REG, KEY_AGAIN
 
-;                LCALL COUNTER_INPUT
-;
-;    OVEN_WAIT_START:
-;                JNB OVEN_START_PIN, OVEN_WAIT_START
-;
-;    ; MOV A, #'S'
-;    ; LCALL LCD_WRITE_DATA
-;
-;    ; SECOND DELAY
-;    MOV SEC_DELAY_REG, #62H
-;    SEC_DELAY_L0:
-;                MOV R4, #0FFH
-;    SEC_DELAY_L1:
-;                MOV R5, #0FFH
-;        SEC_DELAY_L2:
-;                MOV R6, #0FFH
-;            SEC_DELAY_L3:
-;
-;                ; MOV A, #'C'
-;                ; LCALL LCD_WRITE_DATA
-;
-;                ; 7SEG DISPLAY CODE
-;                LCALL COUNTER_DISPLAY_7SEG
-;
-;                ; MOV A, #'D'
-;                ; LCALL LCD_WRITE_DATA
-;
-;                ; EMERGENCY PAUSE
-;                LCALL EMERGENCY_STOP
-;            ; EMERGENCY_PAUSE:
-;            ;     MOV A, #'E'
-;            ;     LCALL LCD_WRITE_DATA
-;
-;            ;     JNB OVEN_PAUSE_PIN, EMERGENCY_PAUSE
-;
-;                DJNZ R6, SEC_DELAY_L3
-;                DJNZ R5, SEC_DELAY_L2
-;                DJNZ R4, SEC_DELAY_L1
-;
-;                DJNZ SEC_DELAY_REG, SEC_DELAY_L0
+                LCALL COUNTER_INPUT
 
-    ; LCALL LCD_CLR
-    ; LCALL LCD_CSR
-    ; LCALL LCD_CI
+    OVEN_WAIT_START:
+                JNB OVEN_START_PIN, OVEN_WAIT_START
 
-    ; ; LCD STRING DISPLAY
-    ; MOV DPTR, #LCD_END_STR
-    ; LCALL LCD_STR_PRINT
+;    MOV A, #'S'
+;    LCALL LCD_WRITE_DATA
+
+    ; SECOND DELAY
+    MOV SEC_DELAY_REG, #22H
+    SEC_DELAY_L0:
+                MOV R4, #0F1H
+    SEC_DELAY_L1:
+                MOV R5, #01H
+        SEC_DELAY_L2:
+                MOV R6, #01H
+            SEC_DELAY_L3:
+
+;                MOV A, #'C'
+;                LCALL LCD_WRITE_DATA
+
+                ; 7SEG DISPLAY CODE
+                LCALL COUNTER_DISPLAY_7SEG
+
+;                MOV A, #'D'
+;                LCALL LCD_WRITE_DATA
+
+                ; EMERGENCY PAUSE
+                LCALL EMERGENCY_STOP
+            ; EMERGENCY_PAUSE:
+            ;     MOV A, #'E'
+            ;     LCALL LCD_WRITE_DATA
+
+            ;     JNB OVEN_PAUSE_PIN, EMERGENCY_PAUSE
+
+                DJNZ R6, SEC_DELAY_L3
+                DJNZ R5, SEC_DELAY_L2
+                DJNZ R4, SEC_DELAY_L1
+
+                DJNZ SEC_DELAY_REG, SEC_DELAY_L0
+
+;    LCALL LCD_CLR
+;    LCALL LCD_CSR
+;    LCALL LCD_CI
+
+    ; LCD STRING DISPLAY
+;    MOV DPTR, #LCD_END_STR
+;    LCALL LCD_STR_PRINT
 
 
     IC_HOLD:    JMP IC_HOLD
@@ -167,19 +166,19 @@ COUNTER_INPUT:
                 LCALL KEY_GET_NUM
                 MOV COUNTER_ADDR_IN_2 , A
                 MOV A, COUNTER_ADDR_IN_2
-                LCALL LCD_WRITE_NUM
+;                LCALL LCD_WRITE_NUM
 
                 ; TAKE INPUT AS INDEX 1
                 LCALL KEY_GET_NUM
                 MOV COUNTER_ADDR_IN_1 , A
                 MOV A, COUNTER_ADDR_IN_1
-                LCALL LCD_WRITE_NUM
+;                LCALL LCD_WRITE_NUM
 
                 ; TAKE INPUT AS INDEX 0
                 LCALL KEY_GET_NUM
                 MOV COUNTER_ADDR_IN_0 , A
                 MOV A, COUNTER_ADDR_IN_0
-                LCALL LCD_WRITE_NUM
+;                LCALL LCD_WRITE_NUM
                 RET
 
 COUNTER_DISPLAY_7SEG:
@@ -414,6 +413,7 @@ KEY_CHECK_ROW: PUSH 0F0H
                 POP 0F0H
                 RET
 
+
 ; MULTIPLE 7 SEGMENT DISPLAY
 M_7SEG_DISP_OUT_0:
                 ;MOV A, #'i'
@@ -452,13 +452,13 @@ M_7SEG_DISP_OUT_2:
                 CPL M_7SEG_DISP_DIGITS_2_PORT
                 RET
 
-;M_7SEG_DISP_OUT_3:
-;                LCALL GET_INDEX_VALUE
-;                MOV M_7SEG_DISP_OUT_PORT, A
-;                CPL M_7SEG_DISP_DIGITS_3_PORT
-;                LCALL M_7SEG_DELAY
-;                CPL M_7SEG_DISP_DIGITS_3_PORT
-;                RET
+; M_7SEG_DISP_OUT_3:
+;                 LCALL GET_INDEX_VALUE
+;                 MOV M_7SEG_DISP_OUT_PORT, A
+;                 CPL M_7SEG_DISP_DIGITS_3_PORT
+;                 LCALL M_7SEG_DELAY
+;                 CPL M_7SEG_DISP_DIGITS_3_PORT
+;                 RET
 
 GET_INDEX_VALUE:
                 MOV DPTR, #M_7SEG_ARRAY
@@ -489,11 +489,13 @@ M_7SEG_DELAY:
                 DB 'O', 'V', 'E', 'N', ' ', 'T', 'A', 'S', 'K', ' ', 'D', 'O', 'N', 'E', ' ', '!', 0
 
     KEYPAD_DATA:
-                DB '7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', 'C', '0', '=', '+' , 0
+;                DB '7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', 'C', '0', '=', '+' , 0
+		DB '1', '2', '3', 'A', '4', '5', '6', 'B', '7', '8', '9', 'C', '*', '0', '#', 'D' , 0
 
     M_7SEG_ARRAY:
                 DB 3FH, 06H, 5BH, 4FH, 66H, 6DH, 7DH, 07H, 7FH, 6FH, 77H, 7CH, 39H, 5EH, 79H, 71H, 0
                 ;   0 ,  1 ,  2 ,  3 ,  4 ,  5 ,  6 ,  7 ,  8 ,  9 ,  A ,  b ,  C ,  d ,  E ,  F ;
+
 
 PROG_END:
                 END
