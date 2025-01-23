@@ -28,4 +28,6 @@
   * [X] Emergency Button
   * [X] Show Emergency MSG in LCD with ***Remaining Time***
 
-# Summary
+# Circuit Diagram
+
+![Proteus Circuit Diagram](./proteus/OVEN_FINAL(v8.17).SVG)
