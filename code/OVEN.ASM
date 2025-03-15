@@ -5,15 +5,12 @@
                 LCD_RW EQU P1.5
                 LCD_E EQU P1.6
 
-                LCD_DELAY_L0_LOC EQU 6FH
-                ;LCD_DELAY_L1_LOC EQU 6EH
-
                 ; LCD DELAY
+                LCD_DELAY_L0_ADDRESS EQU 6FH
                 LCD_DELAY_L0_COUNT    EQU 22H
-                ;LCD_DELAY_L1_COUNT    EQU 10H
 
                 ; KEYPAD SETUP
-                KEY_SINGLE_PRESS_BIT    EQU     7FH   ; bool ( BIT ADDRESSABLE )
+                CHECK_KEY_SINGLE_PRESS_BIT    EQU     7FH   ; bool ( BIT ADDRESSABLE )
                 KEYPAD_P                EQU     P3    ; PORT = C(7654)R(3210)
 
 
@@ -57,13 +54,9 @@
 
                 SEC_DELAY_REG       EQU R7
 
-                COUNTER_L0_LOC         EQU     63H
-                COUNTER_L1_LOC         EQU     64H
-                COUNTER_L2_LOC         EQU     65H
-
-                ;COUNTER_L0_COUNT       EQU     0FFH
-                ;COUNTER_L1_COUNT       EQU     04H
-                ;COUNTER_L2_COUNT       EQU     01H
+                COUNTER_L0_ADDRESS         EQU     63H
+                COUNTER_L1_ADDRESS         EQU     64H
+                COUNTER_L2_ADDRESS         EQU     65H
 
                 ; OVEN SETUP
                 OVEN_START_PIN              EQU P1.3
@@ -80,13 +73,10 @@
 ; ============== MAIN CODE START =====================
 MAIN:           ; MAIN CODE START
                 LCALL LCD_INIT      ; SETUP LCD DISPLAY
-                CLR KEY_SINGLE_PRESS_BIT
-    OVEN_LOOP:
+                CLR CHECK_KEY_SINGLE_PRESS_BIT
+    START_OVEN:
                 LCALL OVEN_INIT     ; SETUP OVEN PINS AS OUTPUT(0), INPUT(1)
-                
                 LCALL LCD_CLR
-                ;LCALL LCD_CSR
-                ;LCALL LCD_CI
                 
                 MOV DPTR, #LCD_STR
                 LCALL LCD_STR_PRINT ; LCD STRING DISPLAY
@@ -94,7 +84,7 @@ MAIN:           ; MAIN CODE START
                 LCALL LCD_CL2
 
                 
-    LCALL COUNTER_INPUT
+    LCALL COUNTER_VALUE_INPUT
 
     LCALL OVEN_CHECK_TIME_60
 
@@ -126,26 +116,23 @@ MAIN:           ; MAIN CODE START
 
             ; CONDITION APPLIED FOR TIME > 60S
             JNB OVEN_TIME_GREATER_60_BIT, COUNTER_CONTINUE
-            MOV A, COUNTER_L1_LOC
+            MOV A, COUNTER_L1_ADDRESS
             RRC A
             JC COUNTER_CONTINUE
             LCALL OVEN_PRINT_GREATER_60
     
     COUNTER_CONTINUE:
-        DJNZ COUNTER_L0_LOC, COUNTER
-                MOV COUNTER_L0_LOC, #0AH
-        DJNZ COUNTER_L1_LOC, COUNTER
-                MOV COUNTER_L1_LOC, #0AH
-        DJNZ COUNTER_L2_LOC, COUNTER
-                ;MOV COUNTER_L2_LOC, #0AH
+        DJNZ COUNTER_L0_ADDRESS, COUNTER
+                MOV COUNTER_L0_ADDRESS, #0AH
+        DJNZ COUNTER_L1_ADDRESS, COUNTER
+                MOV COUNTER_L1_ADDRESS, #0AH
+        DJNZ COUNTER_L2_ADDRESS, COUNTER
+                ;MOV COUNTER_L2_ADDRESS, #0AH
 
     LCALL OVEN_STOP
-
     LCALL OVEN_BUZZER
 
     LCALL LCD_CLR
-    ; LCALL LCD_CSR
-    ;LCALL LCD_CI
 
     ;LCD STRING DISPLAY
     MOV DPTR, #LCD_END_STR
@@ -153,9 +140,8 @@ MAIN:           ; MAIN CODE START
 
     LCALL OVEN_WAIT_START_END    ; PRESS 'ON/C' IN KEYPAD TO START/END
 
-    JMP OVEN_LOOP    ; STRAT OVER
+    JMP START_OVEN    ; STRAT OVER
 
-    ;IC_HOLD:    JMP IC_HOLD
     MAIN_END:   LJMP PROG_END;END
 ; ============== MAIN CODE END ========================
 
@@ -209,13 +195,13 @@ OVEN_CHECK_TIME_60: ; CHECK IF TIME IS GREATER THAN 60 SEC
                 RET
 
 OVEN_LCD_TIME_PRINT:
-                MOV A, COUNTER_L2_LOC
+                MOV A, COUNTER_L2_ADDRESS
                 DEC A
                 LCALL LCD_WRITE_NUM
-                MOV A, COUNTER_L1_LOC
+                MOV A, COUNTER_L1_ADDRESS
                 DEC A
                 LCALL LCD_WRITE_NUM
-                MOV A, COUNTER_L0_LOC
+                MOV A, COUNTER_L0_ADDRESS
                 DEC A
                 LCALL LCD_WRITE_NUM
                 RET
@@ -223,7 +209,7 @@ OVEN_LCD_TIME_PRINT:
 OVEN_WAIT_START_END:; PRESS 'ON/C' IN KEYPAD TO START/END
                     ;MOV A, #'S'
                     ;LCALL LCD_WRITE_DATA
-                LCALL KEY_GET
+                LCALL KEY_GET_FROM_TABLE
                 CJNE A, #'C', OVEN_WAIT_START_END
                 LCALL OVEN_START        ; START THE OVEN
                 RET
@@ -251,11 +237,11 @@ OVEN_PRINT_GREATER_60:
                 MOV DPTR, #LCD_TIME_G_60_STR
                 LCALL LCD_STR_PRINT
                 
-                MOV A, COUNTER_L2_LOC
+                MOV A, COUNTER_L2_ADDRESS
                 DEC A
                 MOV B, #0AH
                 MUL AB
-                ADD A, COUNTER_L1_LOC
+                ADD A, COUNTER_L1_ADDRESS
                 DEC A
                 RRC A
                 LCALL LCD_WRITE_NUM
@@ -265,27 +251,28 @@ OVEN_STOP :     CLR  OVEN_START_PIN     ; STOP  THE OVEN
                 RET
 
 COUNTER_INIT:
-                MOV COUNTER_L2_LOC, COUNTER_ADDR_IN_2
-                MOV COUNTER_L1_LOC, COUNTER_ADDR_IN_1
-                MOV COUNTER_L0_LOC, COUNTER_ADDR_IN_0
-                INC COUNTER_L2_LOC
-                INC COUNTER_L1_LOC
-                INC COUNTER_L0_LOC
+                MOV COUNTER_L2_ADDRESS, COUNTER_ADDR_IN_2
+                MOV COUNTER_L1_ADDRESS, COUNTER_ADDR_IN_1
+                MOV COUNTER_L0_ADDRESS, COUNTER_ADDR_IN_0
+                INC COUNTER_L2_ADDRESS
+                INC COUNTER_L1_ADDRESS
+                INC COUNTER_L0_ADDRESS
                 RET
 
-COUNTER_INPUT:  ; TAKE INPUT AS INDEX 2
+COUNTER_VALUE_INPUT:  
+                ; TAKE INPUT FOR INDEX 2
                 LCALL KEY_GET_NUM
                 MOV COUNTER_ADDR_IN_2 , A
                 MOV A, COUNTER_ADDR_IN_2
                 LCALL LCD_WRITE_NUM
 
-                ; TAKE INPUT AS INDEX 1
+                ; TAKE INPUT FOR INDEX 1
                 LCALL KEY_GET_NUM
                 MOV COUNTER_ADDR_IN_1 , A
                 MOV A, COUNTER_ADDR_IN_1
                 LCALL LCD_WRITE_NUM
 
-                ; TAKE INPUT AS INDEX 0
+                ; TAKE INPUT FOR INDEX 0
                 LCALL KEY_GET_NUM
                 MOV COUNTER_ADDR_IN_0 , A
                 MOV A, COUNTER_ADDR_IN_0
@@ -293,47 +280,17 @@ COUNTER_INPUT:  ; TAKE INPUT AS INDEX 2
                 RET
 
 COUNTER_DISPLAY_7SEG:
-
-                ; LCALL LCD_CLR
-                ; LCALL LCD_CI
-
-                ; MOV A, COUNTER_ADDR_IN_2
-                ; LCALL LCD_WRITE_NUM
-
-                ; MOV COUNTER_ADDR_REG, COUNTER_ADDR
-                MOV A, COUNTER_L2_LOC
+                MOV A, COUNTER_L2_ADDRESS
                 DEC A
                 LCALL M_7SEG_DISP_OUT_2
 
-                ;MOV A, #'2'
-                ;LCALL LCD_WRITE_DATA
-
-                ; INC COUNTER_ADDR_REG
-
-                ; MOV A, @COUNTER_ADDR_REG
-                ; LCALL LCD_WRITE_NUM
-
-                MOV A, COUNTER_L1_LOC
+                MOV A, COUNTER_L1_ADDRESS
                 DEC A
                 LCALL M_7SEG_DISP_OUT_1
 
-                ;MOV A, #'1'
-                ;LCALL LCD_WRITE_DATA
-
-                ; INC COUNTER_ADDR_REG
-
-                ; MOV A, @COUNTER_ADDR_REG
-                ; LCALL LCD_WRITE_NUM
-
-                MOV A, COUNTER_L0_LOC
+                MOV A, COUNTER_L0_ADDRESS
                 DEC A
                 LCALL M_7SEG_DISP_OUT_0
-
-                ;MOV A, #'0'
-                ;LCALL LCD_WRITE_DATA
-
-                ; MOV A, #'C'
-                ; LCALL LCD_WRITE_DATA
                 RET
 
 ; FOR LCD
@@ -348,16 +305,11 @@ LCD_STR_PRINT:  ;MOV DPTR, #LCD_STR
     LSP_END:    RET
 
 
-LCD_DELAY:      ;PUSH LCD_DELAY_L0_LOC
-                ;PUSH LCD_DELAY_L1_LOC
-                MOV LCD_DELAY_L0_LOC, #LCD_DELAY_L0_COUNT
-    LCD_DELAY_L0:  
-    ;             MOV LCD_DELAY_L1_LOC, #LCD_DELAY_L1_COUNT
-    ; LCD_DELAY_L1:  
-    ;             DJNZ LCD_DELAY_L1_LOC, LCD_DELAY_L1
-                DJNZ LCD_DELAY_L0_LOC, LCD_DELAY_L0
-                ;POP LCD_DELAY_L1_LOC
-                ;POP LCD_DELAY_L0_LOC
+LCD_DELAY:
+                MOV LCD_DELAY_L0_ADDRESS, #LCD_DELAY_L0_COUNT
+    LCD_DELAY_L0:
+                DJNZ LCD_DELAY_L0_ADDRESS, LCD_DELAY_L0
+
                 
                 RET
 
@@ -446,33 +398,33 @@ LCD_CSR:        MOV A, #14H         ; Shift cursor position to left
                 RET
 
 ; FOR KEYPAD
-KEY_GET_NUM:
-                LCALL KEY_GET
+KEY_GET_NUM:    ; TAKE NUMBER INPUT FROM KEYPAD
+                LCALL KEY_GET_FROM_TABLE
                 CLR C
                 SUBB A, #30H
                 RET
 
-KEY_GET:       MOV KEYPAD_P, #0F0H
-               LCALL KEY_CHECK_COL     ; B = COLUMN INDEX
-               ;MOV B, A
-               LCALL KEY_CHECK_ROW     ; A = ROW INDEX
-               PUSH 0F0H
-               MOV B, #04H
-               MUL AB
-               POP 0F0H
-               ADD A, B
-               MOV DPTR, #KEYPAD_DATA
-               MOVC A, @A+DPTR
-               RET
-      ; END KEY_GET
+KEY_GET_FROM_TABLE:        ; TAKE ASCII VALUE INPUT FROM KEYPAD 
+                MOV KEYPAD_P, #0F0H
+                LCALL KEY_CHECK_COL     ; B = COLUMN INDEX
+                ;MOV B, A
+                LCALL KEY_CHECK_ROW     ; A = ROW INDEX
+                PUSH 0F0H
+                MOV B, #04H
+                MUL AB
+                POP 0F0H
+                ADD A, B
+                MOV DPTR, #KEYPAD_DATA
+                MOVC A, @A+DPTR
+                RET
 
 KEY_CHECK_COL:  MOV A, KEYPAD_P
                 ANL A, #0F0H
                 CJNE A, #0F0H, KEY_CHECK_SINGLE_PRESS
-                CLR KEY_SINGLE_PRESS_BIT
+                CLR CHECK_KEY_SINGLE_PRESS_BIT
                 JMP KEY_CHECK_COL
     KEY_CHECK_SINGLE_PRESS:
-                JB KEY_SINGLE_PRESS_BIT, KEY_CHECK_COL
+                JB CHECK_KEY_SINGLE_PRESS_BIT, KEY_CHECK_COL
     KEY_CHC_0:  MOV B, #00H
                 CJNE A, #0E0H, KEY_CHC_1
                 JMP KEY_CHC_END
@@ -489,7 +441,7 @@ KEY_CHECK_COL:  MOV A, KEYPAD_P
                 ;CJNE A, #0F7H, KEY_CHC_END
                 ;JMP KEY_CHC_END
     KEY_CHC_END:
-                SETB KEY_SINGLE_PRESS_BIT
+                SETB CHECK_KEY_SINGLE_PRESS_BIT
                 RET
 
 KEY_CHECK_ROW: PUSH 0F0H
