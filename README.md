@@ -30,4 +30,4 @@
 
 # Circuit Diagram
 
-![Proteus Circuit Diagram](./proteus/OVEN_FINAL(v8.17).SVG)
+![Proteus Circuit Diagram](./proteus/OVEN_FINAL.png)
